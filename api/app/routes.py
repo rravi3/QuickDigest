@@ -5,16 +5,18 @@ from app import bcrypt
 from app.models import User
 import sys
 from user_agents import parse
+import openai
 
 #makes sure to check which browser the https request is arriving from to configure appropriately
 def checkBrowser():
     user_agent_string = request.headers.get('User-Agent')
     user_agent = parse(user_agent_string)
     print(user_agent.browser.family)
-    if user_agent.browser.family == 'Safari':
+    if user_agent.browser.family == 'PostmanRuntime':
+        return
+    elif user_agent.browser.family == 'Safari':
         fc_app.config['SESSION_COOKIE_SECURE'] = False
         fc_app.config['SESSION_COOKIE_SAMESITE'] = "Strict"
-
     else:
         fc_app.config['SESSION_COOKIE_SECURE'] = True
         fc_app.config['SESSION_COOKIE_SAMESITE'] = "None"
@@ -23,7 +25,7 @@ def checkBrowser():
 
 @fc_app.route('/register', methods=['POST'])
 def register():
-    #checkBrowser()
+    checkBrowser()
     email = request.json.get("email", None)
 
     password = request.json.get('password', None)
@@ -47,7 +49,7 @@ def register():
 
 @fc_app.route('/@me')
 def get_current_user():
-    #checkBrowser()
+    checkBrowser()
     user_id = session.get("user_id")
 
     if not user_id:
@@ -62,7 +64,7 @@ def get_current_user():
 
 @fc_app.route('/correct-user',methods=['GET'])
 def correctUser():
-    #checkBrowser()
+    checkBrowser()
     user_id = session.get("user_id")
 
     if not user_id:
@@ -82,7 +84,7 @@ def get_all_users():
 
 @fc_app.route('/delete-all-users',methods=['POST'])
 def removeAllUsers():
-    #checkBrowser()
+    checkBrowser()
     all_users = User.query.all()
     
     if all_users is None:
@@ -96,7 +98,7 @@ def removeAllUsers():
     
 @fc_app.route('/login', methods=['POST'])
 def login():
-    #checkBrowser()
+    checkBrowser()
     email = request.json.get("email", None)
     password = request.json.get('password', None)
 
@@ -117,6 +119,26 @@ def login():
 
 @fc_app.route('/logout', methods=["POST"])
 def logout():
-    #checkBrowser()
+    checkBrowser()
     session.pop("user_id")
     return "200"
+
+# @fc_app.route("/prompt", methods=("GET", "POST"))
+# def index():
+#     completion = openai.ChatCompletion.create(model="text-davinci-003", prompt="Hello world")
+#     return jsonify({
+#         "result":completion.choices[0].text
+#     })
+
+
+# def generate_prompt(animal):
+#     return """Suggest three names for an animal that is a superhero.
+
+# Animal: Cat
+# Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
+# Animal: Dog
+# Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
+# Animal: {}
+# Names:""".format(
+#         animal.capitalize()
+#     )
